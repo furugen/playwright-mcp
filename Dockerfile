@@ -31,7 +31,7 @@ RUN mkdir -p /app/output && chown -R playwright:playwright /app/output
 # 非rootユーザーに切り替え
 USER playwright
 
-# ポート設定（SSE用既定ポートを開放）
+# ポート設定（固定ポートを使用）
 EXPOSE 8931
 
 # ヘルスチェック設定を一時的に無効化（デバッグ用）
@@ -44,8 +44,8 @@ ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 ENV PLAYWRIGHT_CHROMIUM_ARGS="--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage"
 ENV NODE_ENV=production
 
-# Railway用の環境変数設定
-ENV PORT=8931
+# MCP用のポート設定（RailwayのPORTと分けて管理）
+ENV MCP_PORT=8931
 
 # シグナルハンドリングを改善するためのinit processを使用
 # SIGTERMを適切に処理するためのentrypointスクリプトを作成
@@ -65,17 +65,28 @@ shutdown() {\n\
 # Register signal handlers\n\
 trap shutdown SIGTERM SIGINT\n\
 \n\
+# Port settings - use MCP_PORT if available, otherwise default to 8931\n\
+ACTUAL_PORT=${MCP_PORT:-8931}\n\
+\n\
 # Start the MCP server\n\
 echo "Starting Playwright MCP server..."\n\
-echo "Port: $PORT"\n\
+echo "Port: $ACTUAL_PORT"\n\
 echo "Host: 0.0.0.0"\n\
-npx @playwright/mcp --headless --port=$PORT --host=0.0.0.0 --output-dir=/app/output --browser=firefox --isolated &\n\
+echo "Railway PORT env: ${PORT:-not_set}"\n\
+echo "MCP_PORT env: ${MCP_PORT:-not_set}"\n\
+\n\
+# Use the correct command based on what npm installs\n\
+npx @playwright/mcp --headless --port=$ACTUAL_PORT --host=0.0.0.0 --output-dir=/app/output --browser=firefox --isolated &\n\
 PLAYWRIGHT_PID=$!\n\
 \n\
 echo "Playwright MCP server started with PID: $PLAYWRIGHT_PID"\n\
+echo "Waiting for process to complete..."\n\
 \n\
 # Wait for the background process\n\
 wait $PLAYWRIGHT_PID\n\
+EXIT_CODE=$?\n\
+echo "Process exited with code: $EXIT_CODE"\n\
+exit $EXIT_CODE\n\
 ' > /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 
 # コンテナ起動時にentrypointスクリプトを実行
