@@ -5,8 +5,9 @@ dockerfilePath = "Dockerfile"
 [deploy]
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
-healthcheckPath = "/sse"
-healthcheckTimeout = 300
+# Disable health check for now - MCP servers don't have standard health endpoints
+# healthcheckPath = "/sse"
+# healthcheckTimeout = 300
 
 [environments.production]
 variables = {

@@ -75,33 +75,22 @@ trap '\''echo "Received shutdown signal, exiting gracefully..."; exit 0'\'' SIGT
 \n\
 echo "Starting MCP server..."\n\
 \n\
-# Start server and monitor in background\n\
+# Start server directly in foreground\n\
 if command -v mcp-server-playwright > /dev/null 2>&1; then\n\
     echo "Using mcp-server-playwright command"\n\
+    echo "Starting server in foreground mode..."\n\
     \n\
-    # Start server in background\n\
-    mcp-server-playwright --headless --port=$ACTUAL_PORT --host=0.0.0.0 --output-dir=/app/output --browser=firefox --isolated &\n\
-    SERVER_PID=$!\n\
+    # Show final status\n\
+    echo "=== SERVER STARTUP ==="\n\
+    echo "✓ Port: $ACTUAL_PORT"\n\
+    echo "✓ Host: 0.0.0.0"\n\
+    echo "✓ URL: https://playwright-mcp-production.up.railway.app"\n\
+    echo "✓ SSE: https://playwright-mcp-production.up.railway.app/sse"\n\
+    echo "✓ MCP: https://playwright-mcp-production.up.railway.app/mcp"\n\
+    echo "Starting server..."\n\
     \n\
-    # Wait for server to initialize\n\
-    echo "Waiting for server initialization (10 seconds)..."\n\
-    sleep 10\n\
-    \n\
-    # Check server status without failing\n\
-    echo "=== SERVER STATUS CHECK ==="\n\
-    if kill -0 $SERVER_PID 2>/dev/null; then\n\
-        echo "✓ Server process is running (PID: $SERVER_PID)"\n\
-        echo "✓ Server should be accessible at https://playwright-mcp-production.up.railway.app"\n\
-        echo "✓ SSE endpoint: https://playwright-mcp-production.up.railway.app/sse"\n\
-        echo "✓ MCP endpoint: https://playwright-mcp-production.up.railway.app/mcp"\n\
-    else\n\
-        echo "✗ Server process stopped unexpectedly"\n\
-        exit 1\n\
-    fi\n\
-    \n\
-    # Keep server running\n\
-    echo "Server is ready for connections..."\n\
-    wait $SERVER_PID\n\
+    # Execute server in foreground\n\
+    exec mcp-server-playwright --headless --port=$ACTUAL_PORT --host=0.0.0.0 --output-dir=/app/output --browser=firefox --isolated\n\
     \n\
 elif command -v npx > /dev/null 2>&1; then\n\
     echo "Using npx approach"\n\
