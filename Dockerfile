@@ -1,35 +1,21 @@
-# Simple Dockerfile for running Playwright MCP server
-FROM node:18-alpine
+# Playwright公式イメージを使用（Node 18 + ブラウザ依存関係込み）
+FROM mcr.microsoft.com/playwright:v1.50.1-jammy
 
-# Install dependencies needed for Playwright
-RUN apk add --no-cache \
-    chromium \
-    nss \
-    freetype \
-    freetype-dev \
-    harfbuzz \
-    ca-certificates \
-    ttf-freefont
-
-# Set environment variables for Playwright
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
-    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
-
-# Create app directory
+# 作業ディレクトリ設定
 WORKDIR /app
 
-# Install @playwright/mcp globally
+# Playwright MCPサーバーをインストール
 RUN npm install -g @playwright/mcp@latest
 
-# Expose port (default 8931, but configurable)
-ARG PORT=8931
-EXPOSE $PORT
+# 出力ディレクトリを作成
+RUN mkdir -p /app/output
 
-# Create non-root user for security
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S playwright -u 1001
+# ポート設定（SSE用既定ポートを開放）
+EXPOSE 8931
 
-USER playwright
+# ヘルスチェック設定
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8931/health || exit 1
 
-# Start the MCP server with configurable port
-CMD ["sh", "-c", "npx @playwright/mcp --port ${PORT:-8931}"]
+# コンテナ起動時にMCPサーバーをヘッドレスモードで起動
+CMD ["npx", "@playwright/mcp", "--headless", "--port=8931", "--host=0.0.0.0", "--output-dir=/app/output"]
