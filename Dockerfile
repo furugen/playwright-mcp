@@ -7,6 +7,14 @@ WORKDIR /app
 # Playwright MCPサーバーをインストール
 RUN npm install -g @playwright/mcp@latest
 
+# Playwrightブラウザを強制再インストール（MCPパッケージとの互換性確保）
+RUN npx playwright install --force chrome
+RUN npx playwright install --force firefox  
+RUN npx playwright install --force webkit
+
+# システム依存関係も強制更新
+RUN npx playwright install-deps
+
 # 出力ディレクトリを作成
 RUN mkdir -p /app/output
 
