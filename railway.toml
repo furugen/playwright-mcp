@@ -1,0 +1,16 @@
+[build]
+builder = "dockerfile"
+
+[deploy]
+healthcheckPath = "/health"
+healthcheckTimeout = 300
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
+
+[environments.production]
+variables = {
+  NODE_ENV = "production",
+  PORT = "8931",
+  PLAYWRIGHT_BROWSERS_PATH = "/ms-playwright",
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "1"
+} 

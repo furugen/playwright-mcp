@@ -25,21 +25,54 @@ RUN npx playwright install-deps
 # 出力ディレクトリを作成
 RUN mkdir -p /app/output && chown -R playwright:playwright /app/output
 
+# curlをインストール（ヘルスチェック用）
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
 # 非rootユーザーに切り替え
 USER playwright
 
 # ポート設定（SSE用既定ポートを開放）
 EXPOSE 8931
 
-# ヘルスチェック設定
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+# ヘルスチェック設定（タイムアウトを延長）
+HEALTHCHECK --interval=60s --timeout=30s --start-period=30s --retries=5 \
     CMD curl -f http://localhost:8931/health || exit 1
 
 # 環境変数でブラウザ設定（サンドボックス無効）
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 ENV PLAYWRIGHT_CHROMIUM_ARGS="--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage"
+ENV NODE_ENV=production
 
-# コンテナ起動時にMCPサーバーをヘッドレスモードで起動（Firefoxを使用、分離モード）
-# Firefoxはサンドボックス問題が少ないため、Chromiumの代わりに使用
-CMD ["npx", "@playwright/mcp", "--headless", "--port=8931", "--host=0.0.0.0", "--output-dir=/app/output", "--browser=firefox", "--isolated"]
+# Railway用の環境変数設定
+ENV PORT=8931
+
+# シグナルハンドリングを改善するためのinit processを使用
+# SIGTERMを適切に処理するためのentrypointスクリプトを作成
+RUN echo '#!/bin/bash\n\
+set -e\n\
+\n\
+# Graceful shutdown handler\n\
+shutdown() {\n\
+    echo "Received SIGTERM signal, shutting down gracefully..."\n\
+    if [ -n "$PLAYWRIGHT_PID" ]; then\n\
+        kill -TERM "$PLAYWRIGHT_PID" 2>/dev/null || true\n\
+        wait "$PLAYWRIGHT_PID" 2>/dev/null || true\n\
+    fi\n\
+    exit 0\n\
+}\n\
+\n\
+# Register signal handlers\n\
+trap shutdown SIGTERM SIGINT\n\
+\n\
+# Start the MCP server\n\
+echo "Starting Playwright MCP server..."\n\
+npx @playwright/mcp --headless --port=8931 --host=0.0.0.0 --output-dir=/app/output --browser=firefox --isolated &\n\
+PLAYWRIGHT_PID=$!\n\
+\n\
+# Wait for the background process\n\
+wait $PLAYWRIGHT_PID\n\
+' > /app/entrypoint.sh && chmod +x /app/entrypoint.sh
+
+# コンテナ起動時にentrypointスクリプトを実行
+CMD ["/app/entrypoint.sh"]
