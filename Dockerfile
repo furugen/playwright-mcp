@@ -34,14 +34,14 @@ RUN chmod +x /app/test-mcp.js && chown playwright:playwright /app/test-mcp.js
 USER playwright
 
 # ポート設定（固定ポートを使用）
-EXPOSE 8931
+EXPOSE 8080
 
 # 環境変数でブラウザ設定（サンドボックス無効）
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 ENV PLAYWRIGHT_CHROMIUM_ARGS="--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage"
 ENV NODE_ENV=production
-ENV MCP_PORT=8931
+ENV MCP_PORT=8080
 
 # デバッグ用のentrypointスクリプト
 RUN echo '#!/bin/bash\n\
@@ -53,7 +53,7 @@ node /app/test-mcp.js\n\
 \n\
 echo "\n=== STARTING MCP SERVER ==="\n\
 # RailwayのPORT環境変数を優先的に使用\n\
-ACTUAL_PORT=${PORT:-${MCP_PORT:-8931}}\n\
+ACTUAL_PORT=${PORT:-${MCP_PORT:-8080}}\n\
 echo "Port: $ACTUAL_PORT"\n\
 echo "Host: 0.0.0.0"\n\
 echo "Railway PORT env: ${PORT:-not_set}"\n\
