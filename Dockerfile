@@ -97,11 +97,14 @@ if command -v mcp-server-playwright > /dev/null 2>&1; then\n\
     echo "  - SSE:  https://playwright-mcp-production.up.railway.app/sse"\n\
     echo "  - MCP:  https://playwright-mcp-production.up.railway.app/mcp"\n\
     \n\
-    # Set CORS and connection settings for better n8n compatibility\n\
+    # Set environment variables for MCP compatibility\n\
     export PLAYWRIGHT_MCP_CORS_ORIGIN="*"\n\
     export PLAYWRIGHT_MCP_MAX_CONNECTIONS=10\n\
+    export MCP_TRANSPORT="sse"\n\
+    export MCP_ENABLE_LOGGING=true\n\
     \n\
-    exec mcp-server-playwright --headless --port=$ACTUAL_PORT --host=0.0.0.0 --output-dir=/app/output --browser=firefox --isolated\n\
+    # Start with explicit SSE transport\n\
+    exec mcp-server-playwright --headless --port=$ACTUAL_PORT --host=0.0.0.0 --output-dir=/app/output --browser=firefox --isolated --transport=sse\n\
     \n\
 elif command -v npx > /dev/null 2>&1; then\n\
     echo "Using npx approach"\n\
