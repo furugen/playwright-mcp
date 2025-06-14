@@ -2,19 +2,26 @@ version: '3.8'
 
 services:
   playwright-mcp:
-    build: 
-      context: .
-      args:
-        PORT: ${PORT:-8931}
+    build: .
+    container_name: playwright-mcp-server
     ports:
-      - "${PORT:-8931}:${PORT:-8931}"
+      - "${MCP_HOST_PORT:-8931}:8931"
     environment:
-      - PORT=${PORT:-8931}
+      - DEBUG=${DEBUG:-}
+      - MCP_OUTPUT_DIR=/app/output
+    volumes:
+      - ./output:/app/output
+      - ./config:/app/config:ro
     restart: unless-stopped
-    # Optional: Add health check
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:${PORT:-8931}"]
+      test: ["CMD", "curl", "-f", "http://localhost:8931/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 10s
+    networks:
+      - playwright-network
+
+networks:
+  playwright-network:
+    driver: bridge

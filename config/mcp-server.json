@@ -1,0 +1,36 @@
+{
+  "server": {
+    "port": 8931,
+    "host": "0.0.0.0",
+    "headless": true,
+    "outputDir": "/app/output"
+  },
+  "browser": {
+    "launchOptions": {
+      "headless": true,
+      "args": [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-accelerated-2d-canvas",
+        "--disable-gpu",
+        "--window-size=1920,1080"
+      ]
+    }
+  },
+  "logging": {
+    "level": "info",
+    "enableTrace": false,
+    "enableDebug": false
+  },
+  "output": {
+    "saveScreenshots": true,
+    "savePdfs": true,
+    "saveTraces": false,
+    "imageResponses": "include"
+  },
+  "security": {
+    "allowedOrigins": ["*"],
+    "enableCors": true
+  }
+}

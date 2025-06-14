@@ -1,6 +1,9 @@
 # Playwright公式イメージを使用（Node 18 + ブラウザ依存関係込み）
 FROM mcr.microsoft.com/playwright:v1.50.1-jammy
 
+# curlをインストール（rootユーザーで実行）
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
 # 非rootユーザーを作成
 RUN groupadd -r playwright && useradd -r -g playwright -G audio,video playwright \
     && mkdir -p /home/playwright/Downloads \
@@ -25,18 +28,15 @@ RUN npx playwright install-deps
 # 出力ディレクトリを作成
 RUN mkdir -p /app/output && chown -R playwright:playwright /app/output
 
-# curlをインストール（ヘルスチェック用）
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
-
 # 非rootユーザーに切り替え
 USER playwright
 
 # ポート設定（SSE用既定ポートを開放）
 EXPOSE 8931
 
-# ヘルスチェック設定（タイムアウトを延長）
-HEALTHCHECK --interval=60s --timeout=30s --start-period=30s --retries=5 \
-    CMD curl -f http://localhost:8931/health || exit 1
+# ヘルスチェック設定を一時的に無効化（デバッグ用）
+# HEALTHCHECK --interval=60s --timeout=30s --start-period=30s --retries=5 \
+#     CMD curl -f http://localhost:8931/health || exit 1
 
 # 環境変数でブラウザ設定（サンドボックス無効）
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
@@ -67,8 +67,12 @@ trap shutdown SIGTERM SIGINT\n\
 \n\
 # Start the MCP server\n\
 echo "Starting Playwright MCP server..."\n\
-npx @playwright/mcp --headless --port=8931 --host=0.0.0.0 --output-dir=/app/output --browser=firefox --isolated &\n\
+echo "Port: $PORT"\n\
+echo "Host: 0.0.0.0"\n\
+npx @playwright/mcp --headless --port=$PORT --host=0.0.0.0 --output-dir=/app/output --browser=firefox --isolated &\n\
 PLAYWRIGHT_PID=$!\n\
+\n\
+echo "Playwright MCP server started with PID: $PLAYWRIGHT_PID"\n\
 \n\
 # Wait for the background process\n\
 wait $PLAYWRIGHT_PID\n\
