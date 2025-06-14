@@ -91,11 +91,21 @@ if command -v mcp-server-playwright > /dev/null 2>&1; then\n\
     \n\
     # Execute server in foreground with standard MCP support\n\
     echo "Starting Playwright MCP Server with standard protocol..."\n\
-    exec mcp-server-playwright --headless --port=$ACTUAL_PORT --host=0.0.0.0 --output-dir=/app/output --browser=firefox\n\
+    echo "Command: mcp-server-playwright --headless --port=$ACTUAL_PORT --host=0.0.0.0 --output-dir=/app/output --browser=firefox --isolated"\n\
+    echo "Server will be available at:"\n\
+    echo "  - Main: https://playwright-mcp-production.up.railway.app"\n\
+    echo "  - SSE:  https://playwright-mcp-production.up.railway.app/sse"\n\
+    echo "  - MCP:  https://playwright-mcp-production.up.railway.app/mcp"\n\
+    \n\
+    # Set CORS and connection settings for better n8n compatibility\n\
+    export PLAYWRIGHT_MCP_CORS_ORIGIN="*"\n\
+    export PLAYWRIGHT_MCP_MAX_CONNECTIONS=10\n\
+    \n\
+    exec mcp-server-playwright --headless --port=$ACTUAL_PORT --host=0.0.0.0 --output-dir=/app/output --browser=firefox --isolated\n\
     \n\
 elif command -v npx > /dev/null 2>&1; then\n\
     echo "Using npx approach"\n\
-    exec npx mcp-server-playwright --headless --port=$ACTUAL_PORT --host=0.0.0.0 --output-dir=/app/output --browser=firefox\n\
+    exec npx mcp-server-playwright --headless --port=$ACTUAL_PORT --host=0.0.0.0 --output-dir=/app/output --browser=firefox --isolated\n\
 else\n\
     echo "No suitable MCP command found"\n\
     exit 1\n\
