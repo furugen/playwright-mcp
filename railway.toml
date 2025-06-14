@@ -1,12 +1,10 @@
 [build]
 builder = "dockerfile"
+dockerfilePath = "Dockerfile.debug"
 
 [deploy]
-# ヘルスチェックを一時的に無効化
-# healthcheckPath = "/health"
-# healthcheckTimeout = 300
 restartPolicyType = "on_failure"
-restartPolicyMaxRetries = 3
+restartPolicyMaxRetries = 1
 
 [environments.production]
 variables = {
