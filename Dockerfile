@@ -52,11 +52,13 @@ echo "Running diagnostic tests..."\n\
 node /app/test-mcp.js\n\
 \n\
 echo "\n=== STARTING MCP SERVER ==="\n\
-ACTUAL_PORT=${MCP_PORT:-8931}\n\
+# RailwayのPORT環境変数を優先的に使用\n\
+ACTUAL_PORT=${PORT:-${MCP_PORT:-8931}}\n\
 echo "Port: $ACTUAL_PORT"\n\
 echo "Host: 0.0.0.0"\n\
 echo "Railway PORT env: ${PORT:-not_set}"\n\
 echo "MCP_PORT env: ${MCP_PORT:-not_set}"\n\
+echo "Using port: $ACTUAL_PORT"\n\
 \n\
 # Start server in foreground for debugging\n\
 exec npx @playwright/mcp --headless --port=$ACTUAL_PORT --host=0.0.0.0 --output-dir=/app/output --browser=firefox --isolated\n\

@@ -9,7 +9,6 @@ restartPolicyMaxRetries = 1
 [environments.production]
 variables = {
   NODE_ENV = "production",
-  MCP_PORT = "8931",
   PLAYWRIGHT_BROWSERS_PATH = "/ms-playwright",
   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "1"
 } 
