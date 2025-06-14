@@ -89,12 +89,13 @@ if command -v mcp-server-playwright > /dev/null 2>&1; then\n\
     echo "✓ MCP: https://playwright-mcp-production.up.railway.app/mcp"\n\
     echo "Starting server..."\n\
     \n\
-    # Execute server in foreground\n\
-    exec mcp-server-playwright --headless --port=$ACTUAL_PORT --host=0.0.0.0 --output-dir=/app/output --browser=firefox --isolated\n\
+    # Execute server in foreground with standard MCP support\n\
+    echo "Starting Playwright MCP Server with standard protocol..."\n\
+    exec mcp-server-playwright --headless --port=$ACTUAL_PORT --host=0.0.0.0 --output-dir=/app/output --browser=firefox\n\
     \n\
 elif command -v npx > /dev/null 2>&1; then\n\
     echo "Using npx approach"\n\
-    exec npx mcp-server-playwright --headless --port=$ACTUAL_PORT --host=0.0.0.0 --output-dir=/app/output --browser=firefox --isolated\n\
+    exec npx mcp-server-playwright --headless --port=$ACTUAL_PORT --host=0.0.0.0 --output-dir=/app/output --browser=firefox\n\
 else\n\
     echo "No suitable MCP command found"\n\
     exit 1\n\
