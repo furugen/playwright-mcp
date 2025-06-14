@@ -79,10 +79,42 @@ trap '\''echo "Received shutdown signal, exiting gracefully..."; exit 0'\'' SIGT
 # Try multiple approaches to start the server\n\
 if command -v mcp-server-playwright > /dev/null 2>&1; then\n\
     echo "Using mcp-server-playwright command"\n\
-    exec mcp-server-playwright --headless --port=$ACTUAL_PORT --host=0.0.0.0 --output-dir=/app/output --browser=firefox --isolated\n\
+    echo "Starting with WebSocket support and increased timeout..."\n\
+    \n\
+    # Start server in background for health monitoring\n\
+    mcp-server-playwright --headless --port=$ACTUAL_PORT --host=0.0.0.0 --output-dir=/app/output --browser=firefox --isolated &\n\
+    SERVER_PID=$!\n\
+    \n\
+    # Wait a moment for server to start\n\
+    sleep 3\n\
+    \n\
+    # Check if server is responding\n\
+    echo "Checking server endpoints..."\n\
+    curl -s -m 5 http://0.0.0.0:$ACTUAL_PORT/health && echo " - Health endpoint OK" || echo " - Health endpoint failed"\n\
+    curl -s -m 5 http://0.0.0.0:$ACTUAL_PORT/sse && echo " - SSE endpoint OK" || echo " - SSE endpoint failed"\n\
+    curl -s -m 5 http://0.0.0.0:$ACTUAL_PORT/mcp && echo " - MCP endpoint OK" || echo " - MCP endpoint failed"\n\
+    \n\
+    # Wait for the server process\n\
+    wait $SERVER_PID\n\
 elif command -v npx > /dev/null 2>&1; then\n\
     echo "Using npx approach"\n\
-    exec npx mcp-server-playwright --headless --port=$ACTUAL_PORT --host=0.0.0.0 --output-dir=/app/output --browser=firefox --isolated\n\
+    echo "Starting with WebSocket support..."\n\
+    \n\
+    # Start server in background for health monitoring\n\
+    npx mcp-server-playwright --headless --port=$ACTUAL_PORT --host=0.0.0.0 --output-dir=/app/output --browser=firefox --isolated &\n\
+    SERVER_PID=$!\n\
+    \n\
+    # Wait a moment for server to start\n\
+    sleep 3\n\
+    \n\
+    # Check if server is responding\n\
+    echo "Checking server endpoints..."\n\
+    curl -s -m 5 http://0.0.0.0:$ACTUAL_PORT/health && echo " - Health endpoint OK" || echo " - Health endpoint failed"\n\
+    curl -s -m 5 http://0.0.0.0:$ACTUAL_PORT/sse && echo " - SSE endpoint OK" || echo " - SSE endpoint failed"\n\
+    curl -s -m 5 http://0.0.0.0:$ACTUAL_PORT/mcp && echo " - MCP endpoint OK" || echo " - MCP endpoint failed"\n\
+    \n\
+    # Wait for the server process\n\
+    wait $SERVER_PID\n\
 else\n\
     echo "No suitable MCP command found"\n\
     exit 1\n\
