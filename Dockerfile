@@ -15,7 +15,7 @@ RUN npm install -g @playwright/mcp@latest
 
 # Playwrightブラウザを強制再インストール（MCPパッケージとの互換性確保）
 # ARM64環境ではChromeがサポートされていないため、ChromiumとFirefoxを使用
-RUN npx playwright install --force chromium
+# RUN npx playwright install --force chromium
 RUN npx playwright install --force firefox  
 RUN npx playwright install --force webkit
 
