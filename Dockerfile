@@ -60,8 +60,33 @@ echo "Railway PORT env: ${PORT:-not_set}"\n\
 echo "MCP_PORT env: ${MCP_PORT:-not_set}"\n\
 echo "Using port: $ACTUAL_PORT"\n\
 \n\
-# Start server in foreground for debugging\n\
-exec npx @playwright/mcp --headless --port=$ACTUAL_PORT --host=0.0.0.0 --output-dir=/app/output --browser=firefox --isolated\n\
+# Check available commands and environment\n\
+echo "=== DIAGNOSTIC INFO ==="\n\
+echo "Node version: $(node --version)"\n\
+echo "NPM version: $(npm --version)"\n\
+echo "Available MCP commands:"\n\
+which mcp-server-playwright && echo "mcp-server-playwright found" || echo "mcp-server-playwright not found"\n\
+ls -la /usr/local/bin/mcp* 2>/dev/null || echo "No mcp commands in /usr/local/bin"\n\
+ls -la /home/playwright/.npm/_npx/ 2>/dev/null || echo "No npx cache"\n\
+npm list -g | grep playwright || echo "No playwright packages found globally"\n\
+\n\
+# Create a fallback solution with signal handling\n\
+echo "Starting MCP server with signal handling..."\n\
+\n\
+# Trap SIGTERM and SIGINT for graceful shutdown\n\
+trap '\''echo "Received shutdown signal, exiting gracefully..."; exit 0'\'' SIGTERM SIGINT\n\
+\n\
+# Try multiple approaches to start the server\n\
+if command -v mcp-server-playwright > /dev/null 2>&1; then\n\
+    echo "Using mcp-server-playwright command"\n\
+    exec mcp-server-playwright --headless --port=$ACTUAL_PORT --host=0.0.0.0 --output-dir=/app/output --browser=firefox --isolated\n\
+elif command -v npx > /dev/null 2>&1; then\n\
+    echo "Using npx approach"\n\
+    exec npx mcp-server-playwright --headless --port=$ACTUAL_PORT --host=0.0.0.0 --output-dir=/app/output --browser=firefox --isolated\n\
+else\n\
+    echo "No suitable MCP command found"\n\
+    exit 1\n\
+fi\n\
 ' > /app/debug-entrypoint.sh && chmod +x /app/debug-entrypoint.sh
 
 # デバッグモード用のコマンド
