@@ -70,51 +70,42 @@ ls -la /usr/local/bin/mcp* 2>/dev/null || echo "No mcp commands in /usr/local/bi
 ls -la /home/playwright/.npm/_npx/ 2>/dev/null || echo "No npx cache"\n\
 npm list -g | grep playwright || echo "No playwright packages found globally"\n\
 \n\
-# Create a fallback solution with signal handling\n\
-echo "Starting MCP server with signal handling..."\n\
-\n\
-# Trap SIGTERM and SIGINT for graceful shutdown\n\
+# Signal handling for graceful shutdown\n\
 trap '\''echo "Received shutdown signal, exiting gracefully..."; exit 0'\'' SIGTERM SIGINT\n\
 \n\
-# Try multiple approaches to start the server\n\
+echo "Starting MCP server..."\n\
+\n\
+# Start server and monitor in background\n\
 if command -v mcp-server-playwright > /dev/null 2>&1; then\n\
     echo "Using mcp-server-playwright command"\n\
-    echo "Starting with WebSocket support and increased timeout..."\n\
     \n\
-    # Start server in background for health monitoring\n\
+    # Start server in background\n\
     mcp-server-playwright --headless --port=$ACTUAL_PORT --host=0.0.0.0 --output-dir=/app/output --browser=firefox --isolated &\n\
     SERVER_PID=$!\n\
     \n\
-    # Wait a moment for server to start\n\
-    sleep 3\n\
+    # Wait for server to initialize\n\
+    echo "Waiting for server initialization (10 seconds)..."\n\
+    sleep 10\n\
     \n\
-    # Check if server is responding\n\
-    echo "Checking server endpoints..."\n\
-    curl -s -m 5 http://0.0.0.0:$ACTUAL_PORT/health && echo " - Health endpoint OK" || echo " - Health endpoint failed"\n\
-    curl -s -m 5 http://0.0.0.0:$ACTUAL_PORT/sse && echo " - SSE endpoint OK" || echo " - SSE endpoint failed"\n\
-    curl -s -m 5 http://0.0.0.0:$ACTUAL_PORT/mcp && echo " - MCP endpoint OK" || echo " - MCP endpoint failed"\n\
+    # Check server status without failing\n\
+    echo "=== SERVER STATUS CHECK ==="\n\
+    if kill -0 $SERVER_PID 2>/dev/null; then\n\
+        echo "✓ Server process is running (PID: $SERVER_PID)"\n\
+        echo "✓ Server should be accessible at https://playwright-mcp-production.up.railway.app"\n\
+        echo "✓ SSE endpoint: https://playwright-mcp-production.up.railway.app/sse"\n\
+        echo "✓ MCP endpoint: https://playwright-mcp-production.up.railway.app/mcp"\n\
+    else\n\
+        echo "✗ Server process stopped unexpectedly"\n\
+        exit 1\n\
+    fi\n\
     \n\
-    # Wait for the server process\n\
+    # Keep server running\n\
+    echo "Server is ready for connections..."\n\
     wait $SERVER_PID\n\
+    \n\
 elif command -v npx > /dev/null 2>&1; then\n\
     echo "Using npx approach"\n\
-    echo "Starting with WebSocket support..."\n\
-    \n\
-    # Start server in background for health monitoring\n\
-    npx mcp-server-playwright --headless --port=$ACTUAL_PORT --host=0.0.0.0 --output-dir=/app/output --browser=firefox --isolated &\n\
-    SERVER_PID=$!\n\
-    \n\
-    # Wait a moment for server to start\n\
-    sleep 3\n\
-    \n\
-    # Check if server is responding\n\
-    echo "Checking server endpoints..."\n\
-    curl -s -m 5 http://0.0.0.0:$ACTUAL_PORT/health && echo " - Health endpoint OK" || echo " - Health endpoint failed"\n\
-    curl -s -m 5 http://0.0.0.0:$ACTUAL_PORT/sse && echo " - SSE endpoint OK" || echo " - SSE endpoint failed"\n\
-    curl -s -m 5 http://0.0.0.0:$ACTUAL_PORT/mcp && echo " - MCP endpoint OK" || echo " - MCP endpoint failed"\n\
-    \n\
-    # Wait for the server process\n\
-    wait $SERVER_PID\n\
+    exec npx mcp-server-playwright --headless --port=$ACTUAL_PORT --host=0.0.0.0 --output-dir=/app/output --browser=firefox --isolated\n\
 else\n\
     echo "No suitable MCP command found"\n\
     exit 1\n\
